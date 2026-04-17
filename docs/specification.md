@@ -88,7 +88,7 @@ Pobranie historii reklamacji klienta i danych kontaktowych (read-only). Kontekst
 LLM klasyfikuje wadę na podstawie opisu i metadanych SAP (parametry batcha, operator, linia produkcyjna):
 - `wizualna` / `wymiary` / `materiał` / `logistyka`
 
-Klasyfikacja deterministyczna — ten sam input → ten sam output. Eliminuje niespójność między specjalistami.
+Klasyfikacja spójna — wywołanie API z `temperature=0` minimalizuje losowość modelu. Ten sam opis wady → ta sama kategoria. Eliminuje niespójność między specjalistami.
 
 ### Krok 6 — Draft odpowiedzi (LLM)
 LLM generuje draft e-maila do klienta w wykrytym języku (PL/EN), uwzględniając:
@@ -181,7 +181,68 @@ Może zatwierdzić jednym kliknięciem lub edytować dowolne pole. Po zatwierdze
 
 ---
 
-## 9. Co byłoby zmienione przy ograniczonym budżecie
+## 9. Interfejs specjalisty (human-in-the-loop)
+
+Specjalista nie korzysta z żadnej nowej aplikacji — powiadomienie trafia na jego skrzynkę Exchange lub kanał Teams i zawiera:
+
+- podsumowanie reklamacji (klient, numer zamówienia, kategoria wady, dane batcha z SAP)
+- draft odpowiedzi do klienta gotowy do wysłania
+- dwa linki akcji: **[Zatwierdź i wyślij]** / **[Edytuj w panelu]**
+
+**Zatwierdzenie** — kliknięcie w link wywołuje endpoint orchestratora (`POST /review/{complaint_id}?action=approve`) z tokenem jednorazowym. Orchestrator wysyła odpowiedź do klienta i aktualizuje ticket JIRA. Zero nowego UI.
+
+**Edycja** — link otwiera prosty panel webowy (hostowany przez orchestrator, FastAPI + Jinja2) z formularzem: pole draftu odpowiedzi, dropdown kategorii wady, przycisk "Wyślij". Minimalne UI — jedna strona, brak frameworku frontendowego.
+
+**Dlaczego nie JIRA jako interfejs?** JIRA nie obsługuje wysyłki maili do klientów bezpośrednio. Dodanie akcji w JIRA wymagałoby Forge app — zbędna złożoność na MVP.
+
+---
+
+## 10. Observability i obsługa błędów
+
+### Logowanie
+Każde zdarzenie w pipeline zapisywane do Azure Application Insights:
+- czas przetwarzania każdego kroku (ekstrakcja, SAP lookup, klasyfikacja, JIRA)
+- wynik klasyfikacji wady + confidence score
+- czy specjalista zatwierdził bez zmian czy edytował draft
+
+### Alerty
+- dead-letter queue w Service Bus niepusta → alert do zespołu technicznego
+- błąd wywołania LLM (5xx Anthropic API) → retry x3, potem fallback do ręcznej obsługi
+- SAP niedostępny > 5 min → alert + kolejkowanie requestów
+
+### Dashboardy (Azure Monitor)
+- liczba reklamacji dziennie / tygodniowo
+- rozkład kategorii wad (wizualna / wymiary / materiał / logistyka)
+- % przypadków gdzie specjalista edytował draft AI (wskaźnik jakości modelu)
+- średni czas od wpłynięcia maila do wysłania odpowiedzi
+
+### Dead-letter queue
+Wiadomości z Service Bus po 3 nieudanych próbach trafiają do dead-letter queue. Orchestrator wysyła alert i tworzy w JIRA ticket z flagą `requires_manual_processing` — specjalista obsługuje ręcznie jak w AS-IS.
+
+---
+
+## 11. Bezpieczeństwo
+
+### Zarządzanie secretami
+Wszystkie klucze API (Anthropic, JIRA, SAP, Graph API) przechowywane w **Azure Key Vault**. Orchestrator pobiera je przy starcie przez Managed Identity — brak secretów w kodzie, w zmiennych środowiskowych ani w repozytorium.
+
+### Autoryzacja Microsoft Graph API
+Service account z zakresem minimalnym: `Mail.Read` + `Mail.Send` na skrzynce `reklamacje@metalpol.pl`. Token OAuth2 odświeżany automatycznie. Brak dostępu do innych skrzynek Exchange.
+
+### Linki akcji specjalisty (approve/reject)
+Tokeny jednorazowe z TTL 48h, podpisane HMAC. Po użyciu lub wygaśnięciu — nieważne. Zapobiega wielokrotnemu zatwierdzeniu tej samej reklamacji.
+
+### GDPR
+- Dane klientów z PostgreSQL używane wyłącznie jako kontekst dla LLM — nie są logowane ani przechowywane poza pipelinemem
+- Zdjęcia wad w Azure Blob Storage z retencją 90 dni (konfigurowalna przez lifecycle policy)
+- Treści maili nie są przechowywane przez orchestrator — przetwarzane w pamięci i odrzucane po zakończeniu pipeline'u
+
+### Komunikacja z SAP
+Wywołania SAP REST API przez sieć wewnętrzną (VNet peering między Azure Container Apps a SAP) — nie przez publiczny internet.
+
+---
+
+## 12. Co byłoby zmienione przy ograniczonym budżecie
 
 1. **Rezygnacja z Azure Service Bus** → synchroniczne przetwarzanie z retry w orchestratorze (ryzyko utraty zdarzeń przy awarii)
 2. **GPT-3.5-turbo zamiast Claude claude-sonnet-4-6** → niższy koszt, gorsza jakość ekstrakcji PL

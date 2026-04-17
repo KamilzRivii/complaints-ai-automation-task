@@ -21,8 +21,14 @@
 complaints-ai-automation-Metalpol/
 ├── README.md
 ├── diagrams/
-│   ├── as-is/          # Event Storming — stan obecny
-│   └── to-be/          # Event Storming — stan docelowy
-├── docs/               # Specyfikacja rozwiązania
-└── architecture/       # Diagramy architektury i przepływu danych
+│   ├── as-is/                    # Event Storming AS-IS (Excalidraw + PNG)
+│   └── to-be/                    # Event Storming TO-BE (Excalidraw + PNG)
+├── docs/
+│   ├── business-context.md       # Opis firmy, problemy CEO, aktorzy
+│   ├── as-is-process.md          # Opis procesu AS-IS
+│   ├── to-be-process.md          # Opis procesu TO-BE
+│   └── specification.md          # Specyfikacja rozwiązania AI
+└── architecture/
+    ├── system-overview.md        # Diagram komponentów (Mermaid)
+    └── data-flow.md              # Diagram sekwencji (Mermaid)
 ```
