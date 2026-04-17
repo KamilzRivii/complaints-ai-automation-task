@@ -8,6 +8,7 @@
 |---|---|
 | [Kontekst biznesowy](docs/business-context.md) | Opis firmy, problemy CEO, aktorzy systemu |
 | [Event Storming AS-IS](diagrams/as-is/event-storming.md) | Obecny proces obsługi reklamacji |
+| [Opis procesu AS-IS](docs/as-is-process.md) | Szczegółowy opis diagramu AS-IS — aktorzy, kroki, hot spoty |
 | [Event Storming TO-BE](diagrams/to-be/event-storming.md) | Proces po wprowadzeniu automatyzacji AI |
 | [Specyfikacja rozwiązania](docs/specification.md) | Architektura, integracje, stos technologiczny, trade-offy |
 | [Przegląd systemu](architecture/system-overview.md) | Komponenty systemu i ich odpowiedzialności |
