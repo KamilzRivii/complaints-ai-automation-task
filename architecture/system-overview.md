@@ -8,47 +8,47 @@ graph TB
         CL([Klient])
     end
 
-    subgraph Microsoft_365
-        EX[Exchange\nreklamacje@metalpol.pl]
-        GR[Microsoft Graph API\nwebhook]
-        OL[Outlook\nwysyłka odpowiedzi]
+    subgraph Microsoft365["Microsoft 365"]
+        EX["Exchange reklamacje@metalpol.pl"]
+        GR["Microsoft Graph API webhook"]
+        OL["Outlook - wysyłka odpowiedzi"]
     end
 
     subgraph Azure
-        SB[Azure Service Bus\nkolejka zdarzeń]
-        CA[Orchestrator\nFastAPI / Container Apps]
-        BS[Azure Blob Storage\nzdjęcia wad]
+        SB["Azure Service Bus - kolejka zdarzen"]
+        CA["Orchestrator FastAPI / Container Apps"]
+        BS["Azure Blob Storage - zdjecia wad"]
     end
 
     subgraph AI
-        LLM[Claude Sonnet\nAnthropic API]
+        LLM["Claude Sonnet - Anthropic API"]
     end
 
-    subgraph Systemy_wewnętrzne
-        SAP[SAP ERP PP/QM\nREST API]
-        PG[PostgreSQL\nbaza klientów]
-        JI[JIRA Cloud\nprojekt REK]
+    subgraph SystemyWewnetrzne["Systemy wewnetrzne"]
+        SAP["SAP ERP PP/QM REST API"]
+        PG["PostgreSQL - baza klientow"]
+        JI["JIRA Cloud - projekt REK"]
     end
 
     subgraph Specjalista
         SP([Specjalista serwisu])
     end
 
-    CL -->|e-mail z reklamacją| EX
+    CL -->|e-mail z reklamacja| EX
     EX -->|webhook| GR
     GR -->|zdarzenie| SB
     SB -->|kolejka| CA
-    CA -->|tekst maila + załączniki| LLM
-    CA -->|upload zdjęć| BS
+    CA -->|tekst maila + zalaczniki| LLM
+    CA -->|upload zdjec| BS
     CA -->|GET order + batch| SAP
     CA -->|GET historia klienta| PG
     LLM -->|JSON ekstrakcja + klasyfikacja + draft| CA
-    CA -->|utwórz Complaint ticket| JI
+    CA -->|utworz Complaint ticket| JI
     CA -->|powiadomienie z draftem| SP
-    SP -->|zatwierdź / koryguj| CA
-    CA -->|wyślij odpowiedź| OL
-    OL -->|e-mail odpowiedź| CL
-    CA -->|utwórz Correction ticket| JI
+    SP -->|zatwierdz / koryguj| CA
+    CA -->|wyslij odpowiedz| OL
+    OL -->|e-mail odpowiedz| CL
+    CA -->|utworz Correction ticket| JI
 ```
 
 ---

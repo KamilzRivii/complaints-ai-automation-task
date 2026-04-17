@@ -2,6 +2,16 @@
 
 > Analiza i projekt automatyzacji procesu reklamacyjnego dla Metalpol Sp. z o.o.
 
+## Podgląd diagramów
+
+### AS-IS
+![Event Storming AS-IS](diagrams/as-is/as-is.png)
+
+### TO-BE
+![Event Storming TO-BE](diagrams/to-be/to-be.png)
+
+---
+
 ## Nawigacja
 
 | Dokument | Opis |
